@@ -964,9 +964,16 @@ void FullscreenUI::RequestChangeDisc()
 {
 	ConfirmShutdownIfMemcardBusy([](bool result) {
 		if (result)
-			DoChangeDiscFromFile();
+		{
+			if (!VMManager::GetM3UPlaylistEntries().empty())
+				OpenPauseSubMenu(PauseSubMenu::ChangeDisc);
+			else
+				DoChangeDiscFromFile();
+		}
 		else
+		{
 			ClosePauseMenu();
+		}
 	});
 }
 
@@ -1668,6 +1675,10 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 						first_id = ImGui::GetID(FSUI_ICONSTR(ICON_PF_BACKWARD, "Back To Pause Menu"));
 						last_id = ImGui::GetID(FSUI_ICONSTR(ICON_FA_STOPWATCH, "Leaderboards"));
 						break;
+					case PauseSubMenu::ChangeDisc:
+						first_id = ImGui::GetID(FSUI_ICONSTR(ICON_PF_BACKWARD, "Back To Pause Menu"));
+						last_id = ImGui::GetID(FSUI_ICONSTR(ICON_FA_FOLDER_OPEN, "Select Disc Image"));
+						break;
 				}
 
 				if (first_id != 0 && last_id != 0)
@@ -1796,6 +1807,35 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 
 				if (ActiveButton(FSUI_ICONSTR(ICON_FA_STOPWATCH, "Leaderboards"), false))
 					OpenLeaderboardsWindow();
+			}
+			break;
+
+
+			case PauseSubMenu::ChangeDisc:
+			{
+				if (just_focused)
+					ImGui::SetFocusID(ImGui::GetID(FSUI_ICONSTR(ICON_PF_BACKWARD, "Back To Pause Menu")), ImGui::GetCurrentWindow());
+
+				if (ActiveButton(FSUI_ICONSTR(ICON_PF_BACKWARD, "Back To Pause Menu"), false) || WantsToCloseMenu())
+					OpenPauseSubMenu(PauseSubMenu::None);
+
+				const std::vector<std::string>& playlist = VMManager::GetM3UPlaylistEntries();
+				const int active_index = VMManager::GetM3UPlaylistCurrentIndex();
+				for (int i = 0; i < static_cast<int>(playlist.size()); ++i)
+				{
+					const std::string label = fmt::format("{}: {}", i + 1, Path::GetFileName(playlist[i]));
+					const bool is_active = (i == active_index);
+					if (ActiveButton(FSUI_ICONSTR(ICON_FA_COMPACT_DISC, label.c_str()), is_active))
+					{
+						Host::RunOnCPUThread([path = playlist[i]]() { VMManager::ChangeDisc(CDVD_SourceType::Iso, path); });
+						ClosePauseMenu();
+					}
+				}
+
+				if (ActiveButton(FSUI_ICONSTR(ICON_FA_FOLDER_OPEN, "From File..."), false))
+				{
+					DoChangeDiscFromFile();
+				}
 			}
 			break;
 		}
