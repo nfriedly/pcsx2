@@ -1631,7 +1631,8 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 		}
 	}
 
-	const ImVec2 window_size(LayoutScale(500.0f, LAYOUT_SCREEN_HEIGHT));
+	const float window_width = (s_current_pause_submenu == PauseSubMenu::ChangeDisc) ? display_size.x : 500.0f;
+	const ImVec2 window_size(LayoutScale(window_width, LAYOUT_SCREEN_HEIGHT));
 	const ImVec2 window_pos(0.0f, display_size.y - LayoutScale(LAYOUT_FOOTER_HEIGHT) - window_size.y);
 
 	if (BeginFullscreenWindow(window_pos, window_size, "pause_menu", ImVec4(0.0f, 0.0f, 0.0f, 0.0f), 0.0f,
